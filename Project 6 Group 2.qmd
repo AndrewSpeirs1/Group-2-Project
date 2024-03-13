@@ -1,0 +1,263 @@
+---
+title: "BMI Distribution"
+execute: 
+  echo: false
+  eval: true
+number-sections: true
+format:
+ html: 
+    embed-resources: true
+    code-tools: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+library(readr)
+library(ggplot2)
+library(ggfortify)
+library(tidyverse)
+library(tidymodels)
+library(gt)
+library(MASS)
+library(patchwork)
+library(moderndive)
+library(scales)
+library(dplyr)
+library(data.table)
+```
+
+# Introduction {#sec-intro}
+
+# Exploratory Analysis {#sec-EA}
+
+@tbl-summary shows the Mean, Median and Standard deviation of the BMI results from 2013 - 2016. Looking at @tbl-summary Below, we can see that the mean and median values for the BMI have a slight increase from 2013 to 2016, which would suggest that there is a population-wide trend of increasing BMI values.
+
+Also, the standard deviation results provide information about the variability or spread of the BMI values within each of the years. The standard deviation results from @tbl-summary also increase from the 2013 - 2016, indicating that there is more diversity in the BMI results in 2015 and 2016.
+
+```{r}
+#| eval: true
+#| warning: false
+#| message: false
+
+Data <- read.csv("DAProject6.csv", fileEncoding = "UTF-8")
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-summary
+#| tbl-cap: Mean, Median and Standard deviation of the BMI from 2013-2016
+
+Data.Year <- Data |>
+  dplyr::select(BMI, Year)
+Data.Year.Sum <- Data.Year |>
+  group_by(Year) |>
+  summarise(Mean = mean(BMI), Median = median(BMI), SD = sd(BMI)) |>
+  gt() |>
+  fmt_number(columns = -Year, decimals = 2) |>
+   tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  )
+
+Data.Year.Sum
+```
+
+@fig-box shows that despite the similar median and quartile values, there are notable differences in the spread and variability of the BMI results across the 4 years, with 2015 and 2016 having the most outliers. The presence of many outliers suggests that there is substantial variability and dispersion of BMI results for each year.
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-box
+#| fig-cap: Boxplot for the BMI results for each year
+#| fig-align: center
+#| fig-width: 3.5
+#| fig-height: 2.5
+
+ggplot(Data, mapping = aes(factor(Data$Year), Data$BMI)) +
+  geom_boxplot() +
+  labs(x = "Year", y = "BMI")
+
+```
+
+Looking at @fig-hist below, we can see that it is slightly right skewed with the majority of the observations on the left-hand side of the histogram and a long tail extending towards the right. A right skewed histogram is also known as a positively skewed histogram and the peak of the graph can be found on the left-hand side and more specifically, between 20-30 BMI from the results.
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-hist
+#| fig-cap: Histogram of the BMI results
+#| fig-align: center
+#| fig-width: 3.5
+#| fig-height: 2.5
+
+ggplot(Data, mapping = aes(BMI)) +
+  geom_histogram() +
+  labs(x = "BMI")
+
+```
+
+@tbl-cor Shows the correlation between BMI and the other variables in the data. Here, we can see that all the correlation results are of very low correlation which suggests that the variables under consideration are not strongly related in a linear manner. Maybe looking at each year separately would show more accurate results and help find variables that are of stronger correlation.
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-cor
+#| tbl-cap: Correlation between BMI and other variables
+
+
+Data$Sex_numeric <- ifelse(Data$Sex == "Male", 1,0)
+
+convert_to_numeric <- function(x) {
+  x_numeric <- as.numeric(factor(x, levels = unique(x)))
+  return(x_numeric)
+}
+Data$Education_numeric <- convert_to_numeric(Data$Education)
+
+Data$Veg_numeric <- ifelse(Data$Veg == "Yes", 1,0)
+Data$Fruit_numeric <- ifelse(Data$Fruit == "Yes", 1,0)
+
+Cors <- Data |>
+  summarise(
+    Age = cor(Data$BMI, Data$Age),
+    Sex = cor(Data$BMI, Data$Sex_numeric),
+    Education = cor(Data$BMI, Data$Education_numeric),
+    Veg = cor(Data$BMI, Data$Veg_numeric),
+    Fruit = cor(Data$BMI, Data$Fruit_numeric)
+  )
+
+cors_dt <- as.data.table(Cors)
+transpose_table <- transpose(cors_dt)
+
+
+Variables <- c("Age", "Sex", "Education", "Veg", "Fruit")
+Correlation <- cbind(Variables, transpose_table)
+
+Correlation <- Correlation |>
+rename(Correlation = V1)
+
+Correlation |>
+  gt() |>
+  fmt_number(decimals = 5) |>
+  tab_style(style = cell_text(weight = "bold"), locations = cells_column_labels()) 
+
+```
+
+Now we will look at the formal analysis for each of the questions of interest below.
+
+# Formal Analysis {#sec-FA}
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+library(dplyr)
+library(psych)
+library(ggplot2)
+library(ggpubr)
+```
+
+```{r}
+#| eval: true
+#| warning: false
+#| message: false
+#| label: tbl-tbl_fig_summary
+#| tbl-cap: Mean, Median and Standard deviation of the BMI from 2013-2016
+
+DAProject6_Data<-read.csv("DAProject6.csv")
+
+DAProject6_Data$Sex<-as.factor(DAProject6_Data$Sex)
+DAProject6_Data$Education<-as.factor(DAProject6_Data$Education)
+DAProject6_Data$Veg<-as.factor(DAProject6_Data$Veg)
+DAProject6_Data$Fruit<-as.factor(DAProject6_Data$Fruit)
+DAProject6_Data$Year<-as.factor(DAProject6_Data$Year)
+
+tbl_fig_summary<-describe(DAProject6_Data)[,c(2,3,4,5,8,9)]
+tbl_fig_summary
+
+```
+
+@tbl-tbl_fig_summary From the table above, it can be seen that there are 14017 data where the mean value of BMI is 27.92, the maximum value is 60.35 and the minimum value is 14.29 (with two decimal places).
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-hist-1
+#| fig-cap: Histogram of BMI
+#| fig-align: center
+#| fig-width: 10
+#| fig-height: 8
+
+options(repr.plot.width=10, repr.plot.height=8)
+ggplot(DAProject6_Data, aes(x=BMI))+
+  geom_histogram(binwidth=1,fill="skyblue",color="black")+
+  labs(title="", x="BMI", y="Frequency")+
+  theme_bw()+
+  theme(legend.position="none",
+        text=element_text(size=14),
+        panel.grid.major=element_blank(),
+        plot.title=element_text(hjust=0.5),
+        panel.grid.minor=element_blank())
+
+```
+
+@fig-hist-1 From the histogram above, it can be seen that the overall distribution of BMI is skewed to the left and presents a non-normal distribution.
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: tbl-tbl_2
+#| tbl-cap: BMI By Year
+
+tbl_2<-
+DAProject6_Data %>%
+  group_by(Year) %>%
+  summarize(mean_bmi=mean(BMI),
+            min_bmi=min(BMI),
+            max_bmi=max(BMI),
+            sd_bmi=sd(BMI))
+tbl_2
+
+```
+
+@tbl-tbl_2 From the table above, it can be seen that the average, maximum, minimum and standard deviation of BMI in each year. From the average point of view, the average value from 2013 to 2016 has not changed significantly.
+
+```{r}
+#| echo: false
+#| warning: false
+#| label: fig-box-1
+#| fig-cap: Boxplot of BMI by year
+#| fig-align: center
+#| fig-height: 8
+
+options(repr.plot.height=8)
+ggboxplot(DAProject6_Data, x="Year", y="BMI", fill="Year", palette="jco")+
+  theme_bw()+
+  theme(legend.position="none",
+        text=element_text(size=14),
+        panel.grid.major=element_blank(),
+        plot.title=element_text(hjust=0.5),
+        panel.grid.minor=element_blank())+
+  labs(title="", x="Year", y="BMI")
+
+```
+
+@fig-box-1 From the boxplot above, it can be seen that there is no particularly big difference in the distribution of BMI from 2013 to 2016.
+
+```{r}
+#| eval: true
+#| warning: false
+#| message: false
+
+model_bmi<-lm(BMI~., data=DAProject6_Data)
+summary(model_bmi)
+
+```
+
+By establishing a regression model between BMI and Year(while controlling the Age, Sex, Education, Veg and Fruit variables), the results show that the P value of Year is greater than 0.05, indicating that there is no significant difference in BMI between years.
+
+# Conclusions {#sec-con}
