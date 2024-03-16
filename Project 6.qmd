@@ -1,15 +1,8 @@
 ---
-title: "BMI Distribution"
-execute: 
-  echo: false
-  eval: true
-number-sections: true
-format:
- html: 
-    embed-resources: true
-    code-tools: true
-editor_options: 
-  chunk_output_type: console
+title: "Investigating the effect of age, gender, socio-economic status, lifestyle factors and a changing time period has on BMI Distrubution"
+author: Yining Jin, James Robb, Kiran Sandhu, Andrew Speirs
+format: pdf
+editor: visual
 ---
 
 ```{r}
@@ -32,6 +25,13 @@ library(data.table)
 
 # Introduction {#sec-intro}
 
+INTRO
+
+The Question of interests are:
+
+1)  Has the body mass index (BMI) in Scotland changed over the given years of the Scottish Health Survey?
+2)  Are there any differences in the BMI distribution by age, gender, socio-economic status or lifestyle factors?
+
 # Exploratory Analysis {#sec-EA}
 
 @tbl-summary shows the Mean, Median and Standard deviation of the BMI results from 2013 - 2016. Looking at @tbl-summary Below, we can see that the mean and median values for the BMI have a slight increase from 2013 to 2016, which would suggest that there is a population-wide trend of increasing BMI values.
@@ -40,6 +40,7 @@ Also, the standard deviation results provide information about the variability o
 
 ```{r}
 #| eval: true
+#| echo: false
 #| warning: false
 #| message: false
 
@@ -75,8 +76,8 @@ Data.Year.Sum
 #| label: fig-box
 #| fig-cap: Boxplot for the BMI results for each year
 #| fig-align: center
-#| fig-width: 3.5
-#| fig-height: 2.5
+#| fig-width: 2.5
+#| fig-height: 2
 
 ggplot(Data, mapping = aes(factor(Data$Year), Data$BMI)) +
   geom_boxplot() +
@@ -84,22 +85,22 @@ ggplot(Data, mapping = aes(factor(Data$Year), Data$BMI)) +
 
 ```
 
-Looking at @fig-hist below, we can see that it is slightly right skewed with the majority of the observations on the left-hand side of the histogram and a long tail extending towards the right. A right skewed histogram is also known as a positively skewed histogram and the peak of the graph can be found on the left-hand side and more specifically, between 20-30 BMI from the results.
-
 ```{r}
 #| echo: false
 #| warning: false
 #| label: fig-hist
 #| fig-cap: Histogram of the BMI results
 #| fig-align: center
-#| fig-width: 3.5
-#| fig-height: 2.5
+#| fig-width: 2.5
+#| fig-height: 2
 
 ggplot(Data, mapping = aes(BMI)) +
   geom_histogram() +
   labs(x = "BMI")
 
 ```
+
+Looking at @fig-hist below, we can see that it is slightly right skewed with the majority of the observations on the left-hand side of the histogram and a long tail extending towards the right. A right skewed histogram is also known as a positively skewed histogram and the peak of the graph can be found on the left-hand side and more specifically, between 20-30 BMI from the results.
 
 @tbl-cor Shows the correlation between BMI and the other variables in the data. Here, we can see that all the correlation results are of very low correlation which suggests that the variables under consideration are not strongly related in a linear manner. Maybe looking at each year separately would show more accurate results and help find variables that are of stronger correlation.
 
@@ -151,4 +152,103 @@ Now we will look at the formal analysis for each of the questions of interest be
 
 # Formal Analysis {#sec-FA}
 
+Analysis was conducted using R Studio and various packages. The significance level for all model tests was $\alpha = 0.05$.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+library(dplyr)
+library(psych)
+library(ggplot2)
+library(ggpubr)
+
+Data <- read.csv("DAProject6.csv")
+
+```
+
+The general linear model was used to assess the trend between Year and BMI distributions. To assess $H_0:$ "Year is not a significant predictor for BMI", the following linear model, model1, was fitted:
+
+$$
+BMI = \beta_0 + \beta_1 \cdot Year
+$$
+
+Where
+
+-   $\beta_0$ is the intercept of the regression line.
+
+-   $\beta_1$ is the slope of the regression line.
+
+```{r}
+#| eval: true
+#| echo: false
+#| warning: false
+#| message: false
+#| label: tbl-m1coef
+#| tbl-cap: Estimates of the model1 coefficients.
+
+model1 <- lm(BMI ~ Year, data=Data)
+
+get_regression_table(model1)[, c(1,2,3,4,5)] |>
+  gt() |>
+  fmt_number(decimals=3) |>
+  tab_style(style = cell_text(weight = "bold"),
+            locations = cells_column_labels())
+
+
+```
+
+Results show that the 'Year' predictor is statistically significant for predicting BMI ($\beta = 0.086$, $s.e. = 0.041$, $t_{(1,14015)} = 2.074$, $p = 0.038$). We reject the null hypothesis and thus, for every unit increase in 'Year', the predicted BMI increases by approximately 0.09 units. Hence, from @tbl-m1coef we obtain the following regression line:
+
+$$
+BMI = -145.306 + 0.086 \cdot Year
+$$
+
+However, it is important to note that the adjusted $R^2$ result is very low ($F_{(1,14015)} = 4.302$, $p = 0.038$, $R^2_{adjusted} = 0.00024$), indicating that the 'Year' predictor only explains a very small fraction of the variability in BMI (0.02%). Given these results, while the year appears to have a statistically significant effect on BMI in this particular dataset, the practical significance of this effect may be limited.
+
+Now, we will compute t-tests to compare the means of the BMI results for each of the 4 years to see if there is a significant difference between them over the time period. The results of each of the t-tests are shown in @tbl-ttest below:
+
+```{r}
+#| echo: false
+#| warning: false
+#| tbl-cap: t-test results for each of the given years
+#| label: tbl-ttest
+
+test13_14 <- t.test(Data$BMI[Data$Year == "2013"], Data$BMI[Data$Year == "2014"])
+test13_15 <- t.test(Data$BMI[Data$Year == "2013"], Data$BMI[Data$Year == "2015"])
+test13_16 <- t.test(Data$BMI[Data$Year == "2013"], Data$BMI[Data$Year == "2016"])
+test14_15 <- t.test(Data$BMI[Data$Year == "2014"], Data$BMI[Data$Year == "2015"])
+test14_16 <- t.test(Data$BMI[Data$Year == "2014"], Data$BMI[Data$Year == "2016"])
+test15_16 <- t.test(Data$BMI[Data$Year == "2015"], Data$BMI[Data$Year == "2016"])
+
+p_values <- cbind("2013-2014" = test13_14$p.value, "2013-2015" = test13_15$p.value, "2013-2016" = test13_16$p.value, "2014-2015" = test14_15$p.value, "2014-2016" = test14_16$p.value, "2015-2016" = test15_16$p.value)
+
+p_values_dt <- as.data.table(p_values)
+transpose_table_2 <- transpose(p_values_dt)
+
+Years <- c("2013-2014", "2013-2015", "2013-2016", "2014-2015", "2014-2016", "2015-2016")
+P_values <- cbind(Years, transpose_table_2)
+
+P_values <- P_values |>
+rename(P_values = V1)
+
+P_values |>
+  gt() |>
+  fmt_number(decimals = 5) |>
+  tab_style(style = cell_text(weight = "bold"),   locations = cells_column_labels()) 
+
+```
+
+From @tbl-ttest, we can see that none of the years which were compared had any significant difference in BMI results so we can claim that the BMI distribution has not significant changed from the years 2013 - 2016.
+
+Descriptive analysis suggested that BMI may be affected by Age, Sex, Education, Veg intake and Fruit intake.
+
+QUESTION OF INTEREST 2 FORMAL ANALYSIS
+
+AIC TESTS FOR THE MODELS
+
+ASSUMPTION CHECKING FOR THE BEST MODEL
+
 # Conclusions {#sec-con}
+
+CONCLUSION
