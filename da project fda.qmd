@@ -1,0 +1,185 @@
+---
+title: "DA group project (FDA p2)"
+format: html
+editor: visual
+---
+
+# Formal data analysis {#sec-FDA}
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+library(tidyverse)
+library(tidymodels)
+library(moderndive)
+library(gt)
+library(patchwork)
+library(ggplot2)
+library(MASS)
+bmi<- read.csv("DAProject6.csv")
+```
+
+For the rest of the variables, namely age, sex, highest education qualification attained, sufficient vegetable intake and sufficient fruit intake, we can fit linear regression models to each of these individually to see whether they have a significant impact on the BMI of an individual. Here are the following models that we have fitted:
+
+Model 2 (Age)
+
+$$ y_i = \alpha_{Age} + \beta_{Age} \cdot Age + \epsilon_i$$
+
+Model 3 (Sex) $$y_i = \alpha_{Sex} + \beta_{Sex} \cdot  \mathbb{I}_{\mbox{Sex}}(x)+ \epsilon_i$$ Model 4 (Education) $$y_i = \alpha_{Education} + \beta_{hg} \cdot  \mathbb{I}_{\mbox{hg}}(x) + \beta_{hnc/d} \cdot  \mathbb{I}_{\mbox{hnc/d}}(x) +\beta_{none} \cdot  \mathbb{I}_{\mbox{none}}(x) + \beta_{school} \cdot  \mathbb{I}_{\mbox{school}}(x) + \beta_{standard} \cdot  \mathbb{I}_{\mbox{standard}}(x)+\epsilon_i$$
+
+-   where the
+
+-   hg is higher grade or equivalent
+
+-   hnc/d is higher national ceritficate/diploma or equivalent
+
+-   none is no qualifcaitons
+
+-   school is school level qualifications
+
+-   standard is standard grade or equivalent
+
+Model 5 (Veg) $$y_i = \alpha_4 + \beta_4 \cdot  \mathbb{I}_{\mbox{veg}}(x)+\epsilon_i$$ Model 6 (Fruit) $$y_i = \alpha_5 + \beta_5 \cdot  \mathbb{I}_{\mbox{Fruit}}(x)+\epsilon_i$$
+
+-   $\alpha_j$ represents the coefficient for the intercept term for model j
+
+-   $\mathbb{I}_{\mbox{a}}(x)$ is an indicator function that takes the value 1 when the subscript is true for the i'th observation
+
+-   $\beta_{j.k}$ represents the coefficient of each of the slope terms in the regression lines, however, for the education model, the slope term is chosen by the highest education level that was achieved by the i'th observation
+
+    ```{r}
+    #| echo: false 
+    #| tbl-cap: estimates of the coefficients for models 2,3,4,5, and 6
+    #| tbl-cap-location: top
+    #| label: tbl-models
+    bmi_a<-bmi|>
+      dplyr::select(Age,Sex,Education, Veg, Fruit, BMI)
+    bmi_a<-bmi|>
+      dplyr::select(Age,Sex,Education, Veg, Fruit, BMI)
+    model2<- linear_reg()|>
+      fit(BMI~Age, data=bmi)
+
+
+    model3<- linear_reg()|>
+      fit(BMI~Sex, data=bmi)
+
+
+    model4<- linear_reg()|>
+      fit(BMI~Education, data=bmi)
+
+
+    model5<- linear_reg()|>
+      fit(BMI~Veg, data=bmi)
+
+
+    model6<- linear_reg()|>
+      fit(BMI~Fruit, data=bmi)
+
+
+
+    t1<-as.data.frame(get_regression_table(model2$fit)[,c(1,2,5)]|>
+      gt()|>
+      fmt_number(decimals = 3))
+
+    t2<-as.data.frame(get_regression_table(model3$fit)[,c(1,2,5)]|>
+      gt()|>
+      fmt_number(decimals = 3))
+
+    t3<-as.data.frame(get_regression_table(model4$fit)[,c(1,2,5)]|>
+      gt()|>
+      fmt_number(decimals = 3))
+
+    t4<-as.data.frame(get_regression_table(model5$fit)[,c(1,2,5)]|>
+      gt()|>
+      fmt_number(decimals = 3))
+
+    t5<- as.data.frame(get_regression_table(model6$fit)[,c(1,2,5)]|>
+      gt()|>
+      fmt_number(decimals = 3))
+
+    knitr::kable(list(t1,t2,t4,t5))
+    knitr::kable(t3)
+
+    ```
+
+From all of these models that have been fitted in @tbl-models , we can observe the p-values of each of these, and we get the following results from them
+
+-   For model 2 (Age), we can see that the p-value is roughly 0, thus meaning its statistically significant and therefore age has a significant impact on the BMI of a person
+
+-   For model 3 (Sex), we can see that the p-value is 0.544, which is above our chosen signicance level of $\alpha = 0.05$ and therefore we can say that this model is not statistically significant, hence sex doesn't have a significant effect on BMI
+
+-   For model 4 (Education), we see that the p-values are all 0 except for when the observed person has achieved a higher grade or equivalent, where its 0.012, all of these p-values are below the significance level and so we can say that BMI is affected by education level
+
+-   For model 5 (Veg), we have that the p-value is equal to 0.267, and since this is greater than our significance level, we can see that this model is not statistically significant and therefore whether you eat sufficient vegetables or not does not have a significant impact on your BMI
+
+-   For model 6 (Fruit), we have that the p-value is 0.013, which is less than the significance level, therefore we can say that this model is statistically significant and hence whether your fruit intake is sufficient can have a significant impact on your BMI
+
+Now, since we have chosen three models that are statistically significant (Age, Education and Fruit), we can now test for the assumptions of each of these models.
+
+We shall begin with the Age model
+
+```{r}
+#| echo: false
+#| label: fig-agemodelass
+#| fig-cap: Assumption checking for Age model
+#| fig-height: 3
+#| fig-width: 10
+reg_points2<-get_regression_points(model2$fit)
+a<-ggplot(reg_points2,aes(x=Age, y= residual))+
+  geom_point()+
+  geom_hline(yintercept = 0, col = "blue")
+
+b<-ggplot(reg_points2, aes(x=BMI_hat, y=residual))+
+  geom_point()+
+  labs(x="Fitted values", y="Residuals")+
+  geom_hline(yintercept = 0, col = "blue")
+
+c<-ggplot(reg_points2, aes(x=residual))+
+  geom_histogram(bins = 30, col = "white")
+
+a+b+c+plot_layout(ncol = 3)
+
+```
+
+As we can see from @fig-agemodelass , we have that there is an even spread of the residuals above and below the zero line in both the graph of residuals against Age (left) and against fitted values (middle), with a few outliers above, however due to n being large we can ignore these. In the histogram of residuals we also have the residuals are centered at zero however they are slightly right skewed.
+
+```{r}
+#| echo: false
+#| label: fig-edumodelass
+#| fig-cap: Assumption checking for Education model
+#| fig-height: 3
+#| fig-width: 10
+reg_points4<-get_regression_points(model4$fit)
+d<-ggplot(reg_points4,aes(x=Education, y= residual))+
+  geom_jitter(alpha = 0.1, width = 0.1)+
+  geom_hline(yintercept = 0, col = "blue")
+
+
+e<-ggplot(reg_points4, aes(x=residual))+
+  geom_histogram(bins = 30, col = "white")
+
+d+e+plot_layout(ncol = 2)
+```
+
+In the plot of residuals against highest education qualification attained in @fig-edumodelass ,(left), we can see in the there is an even split of the residuals above and below the zero line, thus implying that the residuals have mean zero. In the histogram of residuals (right), the residuals are centered at zero however there is a slight right skew once again.
+
+```{r}
+#| echo: false
+#| label: fig-fruitmodelass
+#| fig-cap: Assumption checking for fruit model
+#| fig-height: 3
+#| fig-width: 10
+reg_points6<-get_regression_points(model6$fit)
+f<-ggplot(reg_points6,aes(x=Fruit, y= residual))+
+  geom_jitter(alpha = 0.1, width  = 0.1)+
+  geom_hline(yintercept = 0, col = "blue")
+
+
+g<-ggplot(reg_points6, aes(x=residual))+
+  geom_histogram(bins = 30, col = "white")
+
+f+g+plot_layout(ncol = 2)
+```
+
+In the plot of residuals against fruit in @fig-fruitmodelass (left), it is clear that there is a rough even spread of results above and below the zero line with a few outliers far above however these can be ignored due to n being so large, this implies residuals with mean 0. In the histogram of residuals (right), we can see that its once again centered at 0 however slightly right skewed.
