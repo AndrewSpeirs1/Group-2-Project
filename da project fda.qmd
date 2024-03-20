@@ -28,7 +28,7 @@ $$ y_i = \alpha_{Age} + \beta_{Age} \cdot Age + \epsilon_i$$
 
 Model 3 (Sex) $$y_i = \alpha_{Sex} + \beta_{Sex} \cdot  \mathbb{I}_{\mbox{Sex}}(x)+ \epsilon_i$$ Model 4 (Education) $$y_i = \alpha_{Education} + \beta_{hg} \cdot  \mathbb{I}_{\mbox{hg}}(x) + \beta_{hnc/d} \cdot  \mathbb{I}_{\mbox{hnc/d}}(x) +\beta_{none} \cdot  \mathbb{I}_{\mbox{none}}(x) + \beta_{school} \cdot  \mathbb{I}_{\mbox{school}}(x) + \beta_{standard} \cdot  \mathbb{I}_{\mbox{standard}}(x)+\epsilon_i$$
 
--   where the
+-   where the alpha is the value of the baseline, which is having a degree or equivalent
 
 -   hg is higher grade or equivalent
 
@@ -149,7 +149,7 @@ As we can see from @fig-agemodelass , we have that there is an even spread of th
 #| label: fig-edumodelass
 #| fig-cap: Assumption checking for Education model
 #| fig-height: 3
-#| fig-width: 10
+#| fig-width: 15
 reg_points4<-get_regression_points(model4$fit)
 d<-ggplot(reg_points4,aes(x=Education, y= residual))+
   geom_jitter(alpha = 0.1, width = 0.1)+
