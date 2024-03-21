@@ -117,7 +117,7 @@ From all of these models that have been fitted in @tbl-models , we can observe t
 
 Now, since we have chosen three models that are statistically significant (Age, Education and Fruit), we can now test for the assumptions of each of these models.
 
-We shall begin with the Age model
+We shall begin with the assumptions for the Age model
 
 ```{r}
 #| echo: false
@@ -142,7 +142,9 @@ a+b+c+plot_layout(ncol = 3)
 
 ```
 
-As we can see from @fig-agemodelass , we have that there is an even spread of the residuals above and below the zero line in both the graph of residuals against Age (left) and against fitted values (middle), with a few outliers above, however due to n being large we can ignore these. In the histogram of residuals we also have the residuals are centered at zero however they are slightly right skewed.
+As we can see from @fig-agemodelass , we have that there is an even spread of the residuals above and below the zero line in both the graph of residuals against Age (left) and against fitted values (middle), with a few outliers above, however due to n being large we can ignore these. In the histogram of residuals we also have the residuals are centered at zero however they are slightly right skewed, nevertheless, due to the large sample size n, we can say this model meets the assumptions.
+
+We will now look at the assumptions for the Education model
 
 ```{r}
 #| echo: false
@@ -162,7 +164,9 @@ e<-ggplot(reg_points4, aes(x=residual))+
 d+e+plot_layout(ncol = 2)
 ```
 
-In the plot of residuals against highest education qualification attained in @fig-edumodelass ,(left), we can see in the there is an even split of the residuals above and below the zero line, thus implying that the residuals have mean zero. In the histogram of residuals (right), the residuals are centered at zero however there is a slight right skew once again.
+In the plot of residuals against highest education qualification attained in @fig-edumodelass ,(left), we can see in the there is an even split of the residuals above and below the zero line, thus implying that the residuals have mean zero. In the histogram of residuals (right), the residuals are centered at zero however there is a slight right skew once again, however since n is large enough we can say that this satisfies the assumptions.
+
+Finally, we can look at the assuptions for the fruit model
 
 ```{r}
 #| echo: false
@@ -182,4 +186,4 @@ g<-ggplot(reg_points6, aes(x=residual))+
 f+g+plot_layout(ncol = 2)
 ```
 
-In the plot of residuals against fruit in @fig-fruitmodelass (left), it is clear that there is a rough even spread of results above and below the zero line with a few outliers far above however these can be ignored due to n being so large, this implies residuals with mean 0. In the histogram of residuals (right), we can see that its once again centered at 0 however slightly right skewed.
+In the plot displaying residuals against the highest education qualification attained (left) in \@fig-fruitmodelass, we observe an equal distribution of residuals above and below the zero line, indicating a mean residual value of zero. In the histogram of residuals (right), although the residuals are centered around zero, there is a slight right skew. However, given the sufficiently large sample size (n), we can conclude that this meets the underlying assumptions.
