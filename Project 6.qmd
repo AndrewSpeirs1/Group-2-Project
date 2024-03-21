@@ -1,8 +1,9 @@
 ---
-title: "Investigating the effect of age, gender, socio-economic status, lifestyle factors and a changing time period has on BMI Distrubution"
+title: "Impact of Age, Gender, Socio-Economic Status, and Lifestyle on BMI Distrubution"
 author: Yining Jin, James Robb, Kiran Sandhu, Andrew Speirs
 format: pdf
 editor: visual
+number-sections: true
 ---
 
 ```{r}
@@ -24,13 +25,6 @@ library(data.table)
 ```
 
 # Introduction {#sec-intro}
-
-INTRO
-
-The Question of interests are:
-
-1)  Has the body mass index (BMI) in Scotland changed over the given years of the Scottish Health Survey?
-2)  Are there any differences in the BMI distribution by age, gender, socio-economic status or lifestyle factors?
 
 # Exploratory Analysis {#sec-EA}
 
@@ -68,87 +62,27 @@ Data.Year.Sum <- Data.Year |>
 Data.Year.Sum
 ```
 
-@fig-box shows that despite the similar median and quartile values, there are notable differences in the spread and variability of the BMI results across the 4 years, with 2015 and 2016 having the most outliers. The presence of many outliers suggests that there is substantial variability and dispersion of BMI results for each year.
+@fig-boxhist shows that despite the similar median and quartile values, there are notable differences in the spread and variability of the BMI results across the 4 years, with 2015 and 2016 having the most outliers. The presence of many outliers suggests that there is substantial variability and dispersion of BMI results for each year.
+
+Also, Looking at @fig-boxhist, we can see that the histogram is slightly right skewed with the majority of the observations on the left-hand side of the histogram and a long tail extending towards the right. A right skewed histogram is also known as a positively skewed histogram and the peak of the graph can be found on the left-hand side and more specifically, between 20-30 BMI from the results.
 
 ```{r}
 #| echo: false
 #| warning: false
-#| label: fig-box
-#| fig-cap: Boxplot for the BMI results for each year
-#| fig-align: center
-#| fig-width: 2.5
-#| fig-height: 2
+#| label: fig-boxhist
+#| fig-cap: Boxplot for the BMI results for each year(Left) and Histogram of the BMI(Right)
+#| fig-width: 9
+#| fig-height: 3.5
 
-ggplot(Data, mapping = aes(factor(Data$Year), Data$BMI)) +
-  geom_boxplot() +
-  labs(x = "Year", y = "BMI")
+par(mfrow = c(1,2))
 
-```
+year_colors <- c("red", "blue", "green", "purple")
 
-```{r}
-#| echo: false
-#| warning: false
-#| label: fig-hist
-#| fig-cap: Histogram of the BMI results
-#| fig-align: center
-#| fig-width: 2.5
-#| fig-height: 2
+plot(factor(Data$Year), Data$BMI, xlab = "Year", ylab = "BMI", col = year_colors)
 
-ggplot(Data, mapping = aes(BMI)) +
-  geom_histogram() +
-  labs(x = "BMI")
+hist(Data$BMI, main = "", xlab = "BMI", col = "skyblue")
 
 ```
-
-Looking at @fig-hist below, we can see that it is slightly right skewed with the majority of the observations on the left-hand side of the histogram and a long tail extending towards the right. A right skewed histogram is also known as a positively skewed histogram and the peak of the graph can be found on the left-hand side and more specifically, between 20-30 BMI from the results.
-
-@tbl-cor Shows the correlation between BMI and the other variables in the data. Here, we can see that all the correlation results are of very low correlation which suggests that the variables under consideration are not strongly related in a linear manner. Maybe looking at each year separately would show more accurate results and help find variables that are of stronger correlation.
-
-```{r}
-#| echo: false
-#| warning: false
-#| label: tbl-cor
-#| tbl-cap: Correlation between BMI and other variables
-
-
-Data$Sex_numeric <- ifelse(Data$Sex == "Male", 1,0)
-
-convert_to_numeric <- function(x) {
-  x_numeric <- as.numeric(factor(x, levels = unique(x)))
-  return(x_numeric)
-}
-Data$Education_numeric <- convert_to_numeric(Data$Education)
-
-Data$Veg_numeric <- ifelse(Data$Veg == "Yes", 1,0)
-Data$Fruit_numeric <- ifelse(Data$Fruit == "Yes", 1,0)
-
-Cors <- Data |>
-  summarise(
-    Age = cor(Data$BMI, Data$Age),
-    Sex = cor(Data$BMI, Data$Sex_numeric),
-    Education = cor(Data$BMI, Data$Education_numeric),
-    Veg = cor(Data$BMI, Data$Veg_numeric),
-    Fruit = cor(Data$BMI, Data$Fruit_numeric)
-  )
-
-cors_dt <- as.data.table(Cors)
-transpose_table <- transpose(cors_dt)
-
-
-Variables <- c("Age", "Sex", "Education", "Veg", "Fruit")
-Correlation <- cbind(Variables, transpose_table)
-
-Correlation <- Correlation |>
-rename(Correlation = V1)
-
-Correlation |>
-  gt() |>
-  fmt_number(decimals = 5) |>
-  tab_style(style = cell_text(weight = "bold"), locations = cells_column_labels()) 
-
-```
-
-Now we will look at the formal analysis for each of the questions of interest below.
 
 # Formal Analysis {#sec-FA}
 
@@ -167,17 +101,24 @@ Data <- read.csv("DAProject6.csv")
 
 ```
 
-The general linear model was used to assess the trend between Year and BMI distributions. To assess $H_0:$ "Year is not a significant predictor for BMI", the following linear model, model1, was fitted:
+## Question 1
 
-$$
-BMI = \beta_0 + \beta_1 \cdot Year
+We start by fitting a linear model about the relationship between BMI in Scotland and the given years. To assess $H_0:$ "Year is not a significant predictor for BMI", the following linear model, model1, was fitted:
+
+$$ 
+\begin{aligned}
+y_i &= \beta_0 + \beta_1 \cdot x_{1i} + \beta_2 \cdot x_{2i} + \beta_3 \cdot x_{3i} + \epsilon_i, \quad \epsilon_i \sim N(0,\sigma^2), \quad i=1,...,14017, \\ 
+&= \beta_0 + \beta_{2014} \cdot \mathbb{I}_{\mbox{2014}}(x) + \beta_{2015} \cdot \mathbb{I}_{\mbox{2015}}(x) + \beta_{2016} \cdot \mathbb{I}_{\mbox{2016}}(x) + \epsilon_i,
+\end{aligned}
 $$
 
 Where
 
--   $\beta_0$ is the intercept of the regression line.
+-   $\beta_0$ is the intercept of the regression line for the baseline year (2013);
 
--   $\beta_1$ is the slope of the regression line.
+-   $\beta_{year}$ is the additional term added to $\beta_0$ to get the intercept of the regression line for the specified year;
+
+-   $\mathbb{I}_{\mbox{year}}(x)$ is an indicator function indicating the chosen year.
 
 ```{r}
 #| eval: true
@@ -187,8 +128,12 @@ Where
 #| label: tbl-m1coef
 #| tbl-cap: Estimates of the model1 coefficients.
 
-model1 <- lm(BMI ~ Year, data=Data)
+Data$Year.2014 <- ifelse(Data$Year == 2014, 1, 0)
+Data$Year.2015 <- ifelse(Data$Year == 2015, 1, 0)
+Data$Year.2016 <- ifelse(Data$Year == 2016, 1, 0)
 
+model1 <- lm(BMI ~ Year.2014 + Year.2015 + Year.2016, data = Data)
+               
 get_regression_table(model1)[, c(1,2,3,4,5)] |>
   gt() |>
   fmt_number(decimals=3) |>
@@ -198,57 +143,182 @@ get_regression_table(model1)[, c(1,2,3,4,5)] |>
 
 ```
 
-Results show that the 'Year' predictor is statistically significant for predicting BMI ($\beta = 0.086$, $s.e. = 0.041$, $t_{(1,14015)} = 2.074$, $p = 0.038$). We reject the null hypothesis and thus, for every unit increase in 'Year', the predicted BMI increases by approximately 0.09 units. Hence, from @tbl-m1coef we obtain the following regression line:
+Results show that the 'Year' predictor is not statistically significant with BMI as all of the p-values are greater than 0.05. So, we are unable to reject the null hypothesis and we conclude that there might be no difference in average BMI across the given years. Now, let's look at the assumptions of this model.
 
-$$
-BMI = -145.306 + 0.086 \cdot Year
-$$
-
-However, it is important to note that the adjusted $R^2$ result is very low ($F_{(1,14015)} = 4.302$, $p = 0.038$, $R^2_{adjusted} = 0.00024$), indicating that the 'Year' predictor only explains a very small fraction of the variability in BMI (0.02%). Given these results, while the year appears to have a statistically significant effect on BMI in this particular dataset, the practical significance of this effect may be limited.
-
-Now, we will compute t-tests to compare the means of the BMI results for each of the 4 years to see if there is a significant difference between them over the time period. The results of each of the t-tests are shown in @tbl-ttest below:
+@fig-Ass1 displays the residuals versus fitted values (Left) and histogram of the Residuals (Right). Although there appears to be a greater number of data points distributed above the zero line in the graph, given the size of the dataset, we can make the assumption that the mean of the data is centered around zero. Therefore, we can conclude that the assumptions regarding the residuals, specifically that they have mean zero and constant variance across all of the fitted values, are satisfied. Now, looking at the histogram, the residuals appear to be bell-shaped and they seem to be centered at zero. Even though there seems to be some right skewness in the histogram, due to the large dataset, we can still conclude that the assumptions of constant variance and mean zero for the residuals can be satisfied.
 
 ```{r}
 #| echo: false
 #| warning: false
-#| tbl-cap: t-test results for each of the given years
-#| label: tbl-ttest
+#| label: fig-Ass1
+#| fig-cap: Residuals V Fitted values(Left) and Histogram of Residuals(Right)
+#| fig-align: center
+#| fig-width: 9
+#| fig-height: 3.5
 
-test13_14 <- t.test(Data$BMI[Data$Year == "2013"], Data$BMI[Data$Year == "2014"])
-test13_15 <- t.test(Data$BMI[Data$Year == "2013"], Data$BMI[Data$Year == "2015"])
-test13_16 <- t.test(Data$BMI[Data$Year == "2013"], Data$BMI[Data$Year == "2016"])
-test14_15 <- t.test(Data$BMI[Data$Year == "2014"], Data$BMI[Data$Year == "2015"])
-test14_16 <- t.test(Data$BMI[Data$Year == "2014"], Data$BMI[Data$Year == "2016"])
-test15_16 <- t.test(Data$BMI[Data$Year == "2015"], Data$BMI[Data$Year == "2016"])
+par(mfrow = c(1,2))
 
-p_values <- cbind("2013-2014" = test13_14$p.value, "2013-2015" = test13_15$p.value, "2013-2016" = test13_16$p.value, "2014-2015" = test14_15$p.value, "2014-2016" = test14_16$p.value, "2015-2016" = test15_16$p.value)
+plot(model1, which = 1, main = "")
 
-p_values_dt <- as.data.table(p_values)
-transpose_table_2 <- transpose(p_values_dt)
+hist(model1$residuals, main = "", xlab = "Residuals")
+```
 
-Years <- c("2013-2014", "2013-2015", "2013-2016", "2014-2015", "2014-2016", "2015-2016")
-P_values <- cbind(Years, transpose_table_2)
+## Question 2
 
-P_values <- P_values |>
-rename(P_values = V1)
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+library(tidyverse)
+library(tidymodels)
+library(moderndive)
+library(gt)
+library(patchwork)
+library(ggplot2)
+library(MASS)
+bmi<- read.csv("DAProject6.csv")
+```
 
-P_values |>
-  gt() |>
-  fmt_number(decimals = 5) |>
-  tab_style(style = cell_text(weight = "bold"),   locations = cells_column_labels()) 
+For the rest of the variables, namely age, sex, highest education qualification attained, sufficient vegetable intake and sufficient fruit intake, we can fit linear regression models to each of these individually to see whether they have a significant impact on the BMI of an individual. The table below represents the results from all 5 of these models that we have fitted.
+
+| Term                               | estimate | p-value |
+|:-----------------------------------|:--------:|:-------:|
+| intercept                          |  25.636  |  0.000  |
+| Age                                |  0.045   |  0.000  |
+| intercept                          |  27.898  |  0.000  |
+| Sex: Male                          |  0.056   |  0.544  |
+| intercept                          |  27.234  |  0.000  |
+| Education: Higher grade or equiv   |  0.357   |  0.012  |
+| Education: HNC/D or equiv          |  0.929   |  0.000  |
+| Education: No qualifications       |  1.756   |  0.000  |
+| Education: Other school level      |  1.440   |  0.000  |
+| Education: Standard grade or equiv |  0.800   |  0.000  |
+| intercept                          |  28.018  |  0.000  |
+| Veg: Yes                           |  -0.122  |  0.267  |
+| intercept                          |  27.752  |  0.000  |
+| Fruit: Yes                         |  0.248   |  0.013  |
+
+: estimates of the model coefficients
+
+```{r}
+#| echo: false 
+
+bmi_a<-bmi|>
+  dplyr::select(Age,Sex,Education, Veg, Fruit, BMI)
+
+model2<- linear_reg()|>
+  fit(BMI~Age, data=bmi)
+
+model3<- linear_reg()|>
+  fit(BMI~Sex, data=bmi)
+
+model4<- linear_reg()|>
+  fit(BMI~Education, data=bmi)
+
+model5<- linear_reg()|>
+  fit(BMI~Veg, data=bmi)
+
+model6<- linear_reg()|>
+  fit(BMI~Fruit, data=bmi)
+
+t1<-as.data.frame(get_regression_table(model2$fit)[,c(1,2,5)]|>
+  gt()|>
+  fmt_number(decimals = 3))
+
+t2<-as.data.frame(get_regression_table(model3$fit)[,c(1,2,5)]|>
+  gt()|>
+  fmt_number(decimals = 3))
+
+t3<-as.data.frame(get_regression_table(model4$fit)[,c(1,2,5)]|>
+  gt()|>
+  fmt_number(decimals = 3))
+
+t4<-as.data.frame(get_regression_table(model5$fit)[,c(1,2,5)]|>
+  gt()|>
+  fmt_number(decimals = 3))
+
+t5<- as.data.frame(get_regression_table(model6$fit)[,c(1,2,5)]|>
+  gt()|>
+  fmt_number(decimals = 3))
+```
+
+Hence, from Table 3 we obtain the following regression lines:
+
+$$
+\begin{aligned}
+\widehat{\mbox{BMI}} =~&25.64 + 0.05 \cdot Age \\
+\widehat{\mbox{BMI}} =~&27.23 + 0.36 \cdot (Education: Higher~grade~or~equiv) + 0.93 \cdot (Education: HNC/D~or~equiv) + \\ &1.76 \cdot (Education: No~qualifications) + 
+1.44 \cdot (Education: Other~School~level) + \\ &0.80 \cdot (Education: Standard~grade~or~equiv) \\
+\widehat{\mbox{BMI}} =~&27.75 + 0.25 \cdot (Fruit: Yes)
+\end{aligned}
+$$
+
+From all of these models that have been fitted in table 5 , we can observe the p-values of each of these, and we get the following results from them. The variables Age, Education and Fruit are all statistically significant with BMI distribution whilst Sex and Veg intake are not.
+
+Now, since we have chosen three models that are statistically significant (Age, Education and Fruit), we can now test for the assumptions of each of these models.
+
+We shall begin with the Age model
+
+```{r}
+#| echo: false
+#| label: fig-agemodelass
+#| fig-cap: Assumption checking for Age model
+#| fig-height: 2
+#| fig-width: 4
+reg_points2<-get_regression_points(model2$fit)
+
+b<-ggplot(reg_points2, aes(x=BMI_hat, y=residual))+
+  geom_point()+
+  labs(x="Fitted values", y="Residuals")+
+  geom_hline(yintercept = 0, col = "red")
+
+c<-ggplot(reg_points2, aes(x=residual))+
+  geom_histogram(bins = 30, col = "white")
+
+b+c+plot_layout(ncol = 2)
 
 ```
 
-From @tbl-ttest, we can see that none of the years which were compared had any significant difference in BMI results so we can claim that the BMI distribution has not significant changed from the years 2013 - 2016.
+As we can see from @fig-agemodelass , we have that there is an even spread of the residuals above and below the zero line in both the graph of residuals against Age (left) and against fitted values (middle), with a few outliers above, however due to n being large we can ignore these. In the histogram of residuals we also have the residuals are centered at zero however they are slightly right skewed.
 
-Descriptive analysis suggested that BMI may be affected by Age, Sex, Education, Veg intake and Fruit intake.
+```{r}
+#| echo: false
+#| label: fig-edumodelass
+#| fig-cap: Assumption checking for Education model
+#| fig-height: 2
+#| fig-width: 4
+reg_points4<-get_regression_points(model4$fit)
+d<-ggplot(reg_points4,aes(x=Education, y= residual))+
+  geom_jitter(alpha = 0.1, width = 0.1)+
+  geom_hline(yintercept = 0, col = "red")
 
-QUESTION OF INTEREST 2 FORMAL ANALYSIS
 
-AIC TESTS FOR THE MODELS
+e<-ggplot(reg_points4, aes(x=residual))+
+  geom_histogram(bins = 30, col = "white")
 
-ASSUMPTION CHECKING FOR THE BEST MODEL
+d+e+plot_layout(ncol = 2)
+```
 
-# Conclusions {#sec-con}
+In the plot of residuals against highest education qualification attained in @fig-edumodelass ,(left), we can see in the there is an even split of the residuals above and below the zero line, thus implying that the residuals have mean zero. In the histogram of residuals (right), the residuals are centered at zero however there is a slight right skew once again.
 
-CONCLUSION
+```{r}
+#| echo: false
+#| label: fig-fruitmodelass
+#| fig-cap: Assumption checking for fruit model
+#| fig-height: 2
+#| fig-width: 4
+reg_points6<-get_regression_points(model6$fit)
+f<-ggplot(reg_points6,aes(x=Fruit, y= residual))+
+  geom_jitter(alpha = 0.1, width  = 0.1)+
+  geom_hline(yintercept = 0, col = "red")
+
+
+g<-ggplot(reg_points6, aes(x=residual))+
+  geom_histogram(bins = 30, col = "white")
+
+f+g+plot_layout(ncol = 2)
+```
+
+In the plot of residuals against fruit in @fig-fruitmodelass (left), it is clear that there is a rough even spread of results above and below the zero line with a few outliers far above however these can be ignored due to n being so large, this implies residuals with mean 0. In the histogram of residuals (right), we can see that its once again centered at 0 however slightly right skewed.
+
+# Conclusions
