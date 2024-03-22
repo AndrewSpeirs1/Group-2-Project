@@ -25,6 +25,10 @@ library(data.table)
 ```
 
 # Introduction {#sec-intro}
+BMI distribution and obesity have health risks and pose significant challenges to public health. Understanding the trends and determnants of Body Mass Index (BMI) is crucial for designing effective interventions and policies aimed at reducing obesity rates and improving overall population health. 
+In this statistical analysis plan, we aim to examine the BMI distribution in Scotland from 2013 to 2016 using data from the Scottish Health Surveys. Our analysis focuses on two key research questions:
+- Has the body mass index (BMI) in Scotland changed over the given years of the Scottish Health Survey?
+- Are there any differences in the BMI distribution by age, gender, socio-economic status or lifestyle factors?
 
 # Exploratory Analysis {#sec-EA}
 
